@@ -18,6 +18,7 @@ import { CLOUDFORMATION_TOKEN_RESOLVER, CloudFormationLang } from './private/clo
 import { LogicalIDs } from './private/logical-id';
 import { resolve } from './private/resolve';
 import { makeUniqueId } from './private/uniqueid';
+import { StackPolicy } from './stack-policy';
 import * as cxschema from '../../cloud-assembly-schema';
 import { INCLUDE_PREFIX_IN_UNIQUE_NAME_GENERATION } from '../../cx-api';
 import * as cxapi from '../../cx-api';
@@ -190,6 +191,13 @@ export interface StackProps {
    * @default - the value of `@aws-cdk/core:suppressTemplateIndentation`, or `false` if that is not set.
   */
   readonly suppressTemplateIndentation?: boolean;
+
+  /**
+   * Optional stack policy for this stack
+   *
+   * @default - No stack policy
+   */
+  readonly stackPolicy?: StackPolicy;
 }
 
 /**
@@ -338,6 +346,14 @@ export class Stack extends Construct implements ITaggable {
   public readonly templateFile: string;
 
   /**
+   * The name of the CloudFormation Stack Policy file emitted to the output
+   * directory during synthesis if a stack policy is provided
+   *
+   * Example value: `MyStack.stackPolicy.json`
+   */
+  public readonly stackPolicyFile?: string;
+
+  /**
    * The ID of the cloud assembly artifact for this stack.
    */
   public readonly artifactId: string;
@@ -347,6 +363,11 @@ export class Stack extends Construct implements ITaggable {
    *
    */
   public readonly synthesizer: IStackSynthesizer;
+
+  /**
+   * Optional stack policy for this stack
+   */
+  public readonly stackPolicy?: StackPolicy;
 
   /**
    * Whether version reporting is enabled for this stack
@@ -471,6 +492,11 @@ export class Stack extends Construct implements ITaggable {
       : this.stackName;
 
     this.templateFile = `${this.artifactId}.template.json`;
+
+    if (props.stackPolicy) {
+      this.stackPolicy = props.stackPolicy;
+      this.stackPolicyFile = `${this.artifactId}.stackPolicy.json`;
+    }
 
     // Not for nested stacks
     this._versionReportingEnabled = (props.analyticsReporting ?? this.node.tryGetContext(cxapi.ANALYTICS_REPORTING_ENABLED_CONTEXT))
@@ -1102,6 +1128,13 @@ export class Stack extends Construct implements ITaggable {
     }
 
     fs.writeFileSync(outPath, templateData);
+
+    if (this.stackPolicy && this.stackPolicyFile) {
+      fs.writeFileSync(
+        path.join(builder.outdir, this.stackPolicyFile),
+        JSON.stringify(this.stackPolicy, undefined, indent),
+      );
+    }
 
     for (const ctx of this._missingContext) {
       if (lookupRoleArn != null) {

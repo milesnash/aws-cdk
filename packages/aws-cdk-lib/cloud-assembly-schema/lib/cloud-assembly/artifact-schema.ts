@@ -42,6 +42,13 @@ export interface AwsCloudFormationStackProperties {
   readonly templateFile: string;
 
   /**
+   * An optional file relative to the assembly root which contains the CloudFormation Stack Policy for this stack.
+   *
+   * @default - No stack policy
+   */
+  readonly stackPolicyFile?: string;
+
+  /**
    * Values for CloudFormation stack parameters that should be passed when the stack is deployed.
    *
    * @default - No parameters

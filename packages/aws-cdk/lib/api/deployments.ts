@@ -418,6 +418,10 @@ export class Deployments {
     });
   }
 
+  public async deployStackPolicy(): Promise<void> {
+    return Promise.resolve();
+  }
+
   public async stackExists(options: StackExistsOptions): Promise<boolean> {
     const { stackSdk } = await this.prepareSdkFor(options.stack, undefined, Mode.ForReading);
     const stack = await CloudFormationStack.lookup(stackSdk.cloudFormation(), options.deployName ?? options.stack.stackName);
