@@ -139,7 +139,14 @@ export class CloudFormationStackArtifact extends CloudArtifact {
    */
   public readonly validateOnSynth?: boolean;
 
+  /**
+   * The file name of the stack policy template.
+   */
+  public readonly stackPolicyFile?: string;
+
   private _template: any | undefined;
+
+  private _stackPolicy?: any;
 
   constructor(assembly: CloudAssembly, artifactId: string, artifact: cxschema.ArtifactManifest) {
     super(assembly, artifactId, artifact);
@@ -153,6 +160,7 @@ export class CloudFormationStackArtifact extends CloudArtifact {
     }
     this.environment = EnvironmentUtils.parse(artifact.environment);
     this.templateFile = properties.templateFile;
+    this.stackPolicyFile = properties.stackPolicyFile;
     this.parameters = properties.parameters ?? {};
 
     // We get the tags from 'properties' if available (cloud assembly format >= 6.0.0), otherwise
@@ -194,6 +202,23 @@ export class CloudFormationStackArtifact extends CloudArtifact {
       this._template = JSON.parse(fs.readFileSync(this.templateFullPath, 'utf-8'));
     }
     return this._template;
+  }
+
+  /**
+   * Full path to the stack policy file
+   */
+  public get stackPolicyFullPath() {
+    return this.stackPolicyFile ? path.join(this.assembly.directory, this.stackPolicyFile) : undefined;
+  }
+
+  /**
+   * The CloudFormation Stack Policy for this stack.
+   */
+  public get stackPolicy() {
+    if (this.stackPolicyFullPath && this._stackPolicy === undefined) {
+      this._stackPolicy = JSON.parse(fs.readFileSync(this.stackPolicyFullPath, 'utf-8'));
+    }
+    return this._stackPolicy;
   }
 
   private tagsFromMetadata() {
